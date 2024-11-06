@@ -1,9 +1,7 @@
 package com.mthree.company_budget_mng_system.service;
 
 import com.mthree.company_budget_mng_system.dto.ExpenseDTO;
-import com.mthree.company_budget_mng_system.exception.CategoryNotFoundException;
-import com.mthree.company_budget_mng_system.exception.ExpenseNotFoundException;
-import com.mthree.company_budget_mng_system.exception.ResourceNotFoundException;
+import com.mthree.company_budget_mng_system.exception.*;
 import com.mthree.company_budget_mng_system.mapper.ExpenseMapper;
 import com.mthree.company_budget_mng_system.model.Budget;
 import com.mthree.company_budget_mng_system.model.Expense;
@@ -14,6 +12,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -56,15 +55,33 @@ public class ExpenseService {
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        BigDecimal newTotalForCategory = totalExpensesForCategory.add(expenseDTO.getAmount());
+
         //check whether the category exists in the planned budget -> IllegalArgumentException
         if (plannedAmountPerCategory == null) {
             throw new IllegalArgumentException("No planned budget found for the category: " + expenseDTO.getCategoryType());
-        } else if (totalExpensesForCategory.add(expenseDTO.getAmount()).compareTo(plannedAmountPerCategory) > 0) {
+        } else if (newTotalForCategory.compareTo(plannedAmountPerCategory) > 0) {
             throw new IllegalArgumentException("Adding this expense will exceed the budget for the category " + expenseDTO.getCategoryType());
         }
 
         budget.getActualExpenses().add(expense);
         Expense savedExpense = expenseRepository.save(expense);
+
+        // Check if the total expenses for the category exceeded 90% of the planned budget
+        BigDecimal threshold = plannedAmountPerCategory.multiply(BigDecimal.valueOf(0.9));
+        if (newTotalForCategory.compareTo(threshold) > 0) {
+            // Throw exception with warning message
+            throw new CategoryThresholdExceededException("You exceeded 90% of the budget for category " + expenseDTO.getCategoryType() + ".");
+        }
+
+        //Check if the total expenses for the entire budget exceeded 90% of the total planned budget
+        BigDecimal totalActualExpenses = budget.getActualExpenses().stream()
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (totalActualExpenses.compareTo(budget.getTotalAmount().multiply(BigDecimal.valueOf(0.9))) > 0) {
+            throw new BudgetThresholdExceededException("You exceeded 90% of the total budget for the year " + year);
+        }
+        // Return response with both the expense and warning message (if any)
         return expenseMapper.map(savedExpense);
     }
 
