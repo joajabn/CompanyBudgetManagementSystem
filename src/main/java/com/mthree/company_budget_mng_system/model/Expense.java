@@ -22,9 +22,14 @@ public class Expense {
 
     private String description;
 
+    @Column(nullable = false)
     private LocalDate date;
 
     @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
+    @JoinColumn(name = "budget_id", nullable = false)
+    private Budget budget;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CategoryType categoryType;
 }

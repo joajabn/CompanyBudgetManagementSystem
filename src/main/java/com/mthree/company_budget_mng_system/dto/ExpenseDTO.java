@@ -1,10 +1,9 @@
 package com.mthree.company_budget_mng_system.dto;
 
-import com.mthree.company_budget_mng_system.model.Category;
+import com.mthree.company_budget_mng_system.model.CategoryType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
-import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -28,5 +27,5 @@ public class ExpenseDTO {
     private LocalDate date;
 
     @NotNull(message = "Provide category of your expense.")
-    private Category category;
+    private CategoryType categoryType;
 }

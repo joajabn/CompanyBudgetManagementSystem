@@ -1,21 +1,21 @@
 package com.mthree.company_budget_mng_system.service;
 
 import com.mthree.company_budget_mng_system.dto.BudgetDTO;
-import com.mthree.company_budget_mng_system.dto.CategoryDTO;
 import com.mthree.company_budget_mng_system.exception.BudgetAlreadyExistsException;
 import com.mthree.company_budget_mng_system.exception.ResourceNotFoundException;
 import com.mthree.company_budget_mng_system.mapper.BudgetMapper;
 import com.mthree.company_budget_mng_system.model.Budget;
+import com.mthree.company_budget_mng_system.model.Expense;
 import com.mthree.company_budget_mng_system.repository.BudgetRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+
 @Slf4j
 @Service
 public class BudgetService {
@@ -30,13 +30,15 @@ public class BudgetService {
 
     @Transactional
     public BudgetDTO createBudget(BudgetDTO budgetDTO) {
-        // Check if a budget for the specified year already exists
+        // 1.Check if a budget for the specified year already exists
         if (budgetRepository.existsByYear(budgetDTO.getYear())) {
             throw new BudgetAlreadyExistsException("A budget for the year " + budgetDTO.getYear() + " already exists.");
         }
-
-        Budget budget = budgetMapper.map(budgetDTO);
-        return budgetMapper.map(budgetRepository.save(budget));
+        // 2. Check if amounts sum up to total amount -> IllegalArgumentException
+        budgetDTO.validateBudget(budgetDTO);
+        // 3. Map BudgetDTO to Budget
+        Budget budget = budgetMapper.toEntity(budgetDTO);
+        return budgetMapper.toDto(budgetRepository.save(budget));
     }
 
     public List<BudgetDTO> getAllBudgets() {
@@ -45,44 +47,55 @@ public class BudgetService {
 
     public BudgetDTO getBudgetById(Long id) {
         Budget budget = budgetRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Budget not found with id " + id));
-        return budgetMapper.map(budget);
+                .orElseThrow(() -> {
+                    String message = "Budget with given id doesn't exist";
+                    log.error(message);
+                    throw new ResourceNotFoundException(message);
+                });
+        return budgetMapper.toDto(budget);
     }
 
     @Transactional
     public BudgetDTO updateBudget(Long id, BudgetDTO budgetDTO) {
         Budget budget = budgetRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Budget not found with id " + id));
+                .orElseThrow(() -> {
+                    String message = "Budget with given id doesn't exist";
+                    log.error(message);
+                    throw new ResourceNotFoundException(message);
+                });
 
         // Update fields as needed
         budget.setTotalAmount(budgetDTO.getTotalAmount());
         budget.setYear(budgetDTO.getYear());
         // Update categories if needed
 
-        return budgetMapper.map(budgetRepository.save(budget));
+        return budgetMapper.toDto(budgetRepository.save(budget));
     }
 
     @Transactional
     public void deleteBudget(Long id) {
         Budget budget = budgetRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Budget not found with id " + id));
-        budgetRepository.delete(budget);
-    }
-
-    public BigDecimal calculatePercentageOfBudgetUsed(Long budgetId) {
-        BudgetDTO budgetDTO = budgetRepository.findById(budgetId)
-                .map(budget -> budgetMapper.map(budget))
                 .orElseThrow(() -> {
                     String message = "Budget with given id doesn't exist";
                     log.error(message);
                     throw new ResourceNotFoundException(message);
                 });
-        BigDecimal totalAmount = budgetDTO.getTotalAmount();
-        if(totalAmount == null || totalAmount.compareTo(BigDecimal.ZERO) == 0){
+        budgetRepository.delete(budget);
+    }
+
+    public BigDecimal calculatePercentageOfBudgetUsed(Long budgetId) {
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> {
+                    String message = "Budget with given id doesn't exist";
+                    log.error(message);
+                    throw new ResourceNotFoundException(message);
+                });
+        BigDecimal totalAmount = budget.getTotalAmount();
+        if (totalAmount == null || totalAmount.compareTo(BigDecimal.ZERO) == 0) {
             throw new IllegalStateException("Total budget amount must be greater than zero.");
         }
-        BigDecimal totalExpenses = budgetDTO.getCategories().stream()
-                .map(CategoryDTO::getAmount)
+        BigDecimal totalExpenses = budget.getActualExpenses().stream()
+                .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         return totalExpenses
                 .multiply(BigDecimal.valueOf(100))

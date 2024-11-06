@@ -4,7 +4,6 @@ import com.mthree.company_budget_mng_system.dto.ExpenseDTO;
 import com.mthree.company_budget_mng_system.exception.CategoryNotFoundException;
 import com.mthree.company_budget_mng_system.exception.ExpenseNotFoundException;
 import com.mthree.company_budget_mng_system.mapper.ExpenseMapper;
-import com.mthree.company_budget_mng_system.model.Category;
 import com.mthree.company_budget_mng_system.model.Expense;
 import com.mthree.company_budget_mng_system.repository.ExpenseRepository;
 import jakarta.transaction.Transactional;
@@ -25,14 +24,14 @@ public class ExpenseService {
         this.expenseMapper = expenseMapper;
     }
 
-    @Transactional
-    public ExpenseDTO createExpense(ExpenseDTO expenseDTO) {
-        if (expenseDTO.getCategory() == null || expenseDTO.getCategory().getId() == null) {
-            throw new CategoryNotFoundException("Category ID must not be null");
-        }
-        Expense expense = expenseMapper.map(expenseDTO);
-        return expenseMapper.map(expenseRepository.save(expense));
-    }
+//    @Transactional
+//    public ExpenseDTO createExpense(ExpenseDTO expenseDTO) {
+//        if (expenseDTO.getCategoryType() == null || expenseDTO.getCategoryType().getId() == null) {
+//            throw new CategoryNotFoundException("Category ID must not be null");
+//        }
+//        Expense expense = expenseMapper.map(expenseDTO);
+//        return expenseMapper.map(expenseRepository.save(expense));
+//    }
 
     public List<ExpenseDTO> getAllExpenses() {
         return expenseMapper.mapToDtoList(expenseRepository.findAll());
