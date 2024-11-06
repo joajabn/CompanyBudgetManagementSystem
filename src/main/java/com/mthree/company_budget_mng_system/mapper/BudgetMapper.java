@@ -9,6 +9,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ public interface BudgetMapper {
     // Mapping between BudgetDTO and Budget
     @Mapping(target = "budgetPlanned", source = "categoryTypeAmountDTOS")
     Budget toEntity(BudgetDTO budgetDTO);
+    @Mapping(target = "categoryTypeAmountDTOS", source = "budgetPlanned")
     BudgetDTO toDto(Budget budget);
 
     // Mapping between CategoryTypeAmountDTO and Map<CategoryType, BigDecimal>
@@ -33,5 +35,18 @@ public interface BudgetMapper {
             plannedBudget.put(dto.getCategoryType(), dto.getAmount());
         }
         return plannedBudget;
+    }
+
+    @IterableMapping(elementTargetType = CategoryTypeAmountDTO.class)
+    default List<CategoryTypeAmountDTO> mapBudgetPlannedToCategoryTypeAmountDTOs(Map<CategoryType, BigDecimal> plannedBudget) {
+        List<CategoryTypeAmountDTO> categoryTypeAmountDTOs = new ArrayList<>();
+        for (Map.Entry<CategoryType, BigDecimal> entry : plannedBudget.entrySet()) {
+            CategoryTypeAmountDTO dto = CategoryTypeAmountDTO.builder()
+                    .categoryType(entry.getKey())
+                    .amount(entry.getValue())
+                    .build();
+            categoryTypeAmountDTOs.add(dto);
+        }
+        return categoryTypeAmountDTOs;
     }
 }

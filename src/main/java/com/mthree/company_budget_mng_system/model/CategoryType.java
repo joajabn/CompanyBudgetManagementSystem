@@ -5,5 +5,6 @@ public enum CategoryType {
     MARKETING,
     SALES,
     IT,
+    OTHER,
     OPERATIONS;
 }

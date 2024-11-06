@@ -21,10 +21,10 @@ public class ExpenseController {
     }
 
     @PostMapping
-//    public ResponseEntity<ExpenseDTO> createExpense(@RequestBody ExpenseDTO expenseDTO) {
-//        ExpenseDTO createdExpense = expenseService.createExpense(expenseDTO);
-//        return ResponseEntity.ok(createdExpense);
-//    }
+    public ResponseEntity<ExpenseDTO> createExpense(@RequestBody ExpenseDTO expenseDTO) {
+        ExpenseDTO createdExpense = expenseService.createExpense(expenseDTO);
+        return ResponseEntity.ok(createdExpense);
+    }
 
     @GetMapping
     public ResponseEntity<List<ExpenseDTO>> getAllExpenses() {

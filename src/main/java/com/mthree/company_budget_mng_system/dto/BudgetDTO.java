@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-//@Getter
-//@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -27,16 +25,14 @@ public class BudgetDTO {
     private List<CategoryTypeAmountDTO> categoryTypeAmountDTOS = new ArrayList<>();
 
     public boolean validateBudget(BudgetDTO budgetDTO) {
-        BigDecimal totalCalculatedAmount = categoryTypeAmountDTOS.stream()
+        BigDecimal totalCalculatedAmount = budgetDTO.getCategoryTypeAmountDTOS().stream()
                 .map(CategoryTypeAmountDTO::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Check if the total calculated amount is less than or equal to the total budget amount
-        if (totalCalculatedAmount.compareTo(budgetDTO.getTotalAmount()) > 0) {
-            throw new IllegalArgumentException("The sum of category amounts exceeds the total budget amount.");
-        }
+        System.out.println("Calculated Total Amount: " + totalCalculatedAmount);
+        System.out.println("Expected Total Amount: " + budgetDTO.getTotalAmount());
 
-        // Check if the total calculated amount is equal to the total budget amount (not exceeding)
+        // Ensure the total calculated amount equals the total budget amount
         if (totalCalculatedAmount.compareTo(budgetDTO.getTotalAmount()) != 0) {
             throw new IllegalArgumentException("The sum of category amounts must equal the total budget amount.");
         }

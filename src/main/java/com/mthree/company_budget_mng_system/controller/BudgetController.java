@@ -1,6 +1,7 @@
 package com.mthree.company_budget_mng_system.controller;
 
 import com.mthree.company_budget_mng_system.dto.BudgetDTO;
+import com.mthree.company_budget_mng_system.dto.ExpenseDTO;
 import com.mthree.company_budget_mng_system.exception.BudgetAlreadyExistsException;
 import com.mthree.company_budget_mng_system.exception.ResourceNotFoundException;
 import com.mthree.company_budget_mng_system.service.BudgetService;
@@ -40,6 +41,12 @@ public class BudgetController {
     @GetMapping("/{id}")
     public ResponseEntity<BudgetDTO> getBudgetById(@PathVariable Long id) {
         return ResponseEntity.ok(budgetService.getBudgetById(id));
+    }
+
+    @GetMapping("/{budgetId}/expenses")
+    public ResponseEntity<List<ExpenseDTO>> getActualExpenses(@PathVariable Long budgetId) {
+        List<ExpenseDTO> expenses = budgetService.getActualExpenses(budgetId);
+        return ResponseEntity.ok(expenses);
     }
 
     @PutMapping("/{id}")

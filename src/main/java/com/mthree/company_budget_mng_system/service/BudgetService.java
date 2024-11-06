@@ -1,9 +1,11 @@
 package com.mthree.company_budget_mng_system.service;
 
 import com.mthree.company_budget_mng_system.dto.BudgetDTO;
+import com.mthree.company_budget_mng_system.dto.ExpenseDTO;
 import com.mthree.company_budget_mng_system.exception.BudgetAlreadyExistsException;
 import com.mthree.company_budget_mng_system.exception.ResourceNotFoundException;
 import com.mthree.company_budget_mng_system.mapper.BudgetMapper;
+import com.mthree.company_budget_mng_system.mapper.ExpenseMapper;
 import com.mthree.company_budget_mng_system.model.Budget;
 import com.mthree.company_budget_mng_system.model.Expense;
 import com.mthree.company_budget_mng_system.repository.BudgetRepository;
@@ -15,17 +17,20 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class BudgetService {
     private final BudgetRepository budgetRepository;
     private final BudgetMapper budgetMapper;
+    private final ExpenseMapper expenseMapper;
 
     @Autowired
-    public BudgetService(BudgetRepository budgetRepository, BudgetMapper budgetMapper) {
+    public BudgetService(BudgetRepository budgetRepository, BudgetMapper budgetMapper, ExpenseMapper expenseMapper) {
         this.budgetRepository = budgetRepository;
         this.budgetMapper = budgetMapper;
+        this.expenseMapper = expenseMapper;
     }
 
     @Transactional
@@ -53,6 +58,19 @@ public class BudgetService {
                     throw new ResourceNotFoundException(message);
                 });
         return budgetMapper.toDto(budget);
+    }
+
+    public List<ExpenseDTO> getActualExpenses(Long budgetId) {
+        // Retrieve the budget by ID
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new ResourceNotFoundException("Budget with ID " + budgetId + " not found"));
+
+        // Map the actual expenses from the Budget entity to ExpenseDTOs
+        List<ExpenseDTO> expenseDTOs = budget.getActualExpenses().stream()
+                .map(expense -> expenseMapper.map(expense))
+                .collect(Collectors.toList());
+
+        return expenseDTOs;
     }
 
     @Transactional

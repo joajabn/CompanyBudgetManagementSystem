@@ -1,5 +1,6 @@
 package com.mthree.company_budget_mng_system.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,11 +26,12 @@ public class Expense {
     @Column(nullable = false)
     private LocalDate date;
 
-    @ManyToOne
-    @JoinColumn(name = "budget_id", nullable = false)
+    @ManyToOne(cascade = CascadeType.PERSIST)
+    @JoinColumn(name = "budget_id")
     private Budget budget;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CategoryType categoryType;
+
 }

@@ -9,8 +9,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
-//@Getter
-//@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -28,4 +26,5 @@ public class ExpenseDTO {
 
     @NotNull(message = "Provide category of your expense.")
     private CategoryType categoryType;
+
 }
