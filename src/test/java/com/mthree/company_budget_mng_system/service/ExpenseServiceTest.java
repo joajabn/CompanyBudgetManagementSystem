@@ -1,6 +1,7 @@
 package com.mthree.company_budget_mng_system.service;
 
 import com.mthree.company_budget_mng_system.dto.ExpenseDTO;
+import com.mthree.company_budget_mng_system.exception.CategoryThresholdExceededException;
 import com.mthree.company_budget_mng_system.exception.ExpenseNotFoundException;
 import com.mthree.company_budget_mng_system.mapper.ExpenseMapper;
 import com.mthree.company_budget_mng_system.model.Budget;
@@ -11,16 +12,14 @@ import com.mthree.company_budget_mng_system.repository.ExpenseRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-import javax.swing.text.html.parser.Entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -136,7 +135,8 @@ class ExpenseServiceTest {
     @Test
     void updateExpense_ShouldThrowException_WhenCategoryBudgetExceeded() {
         // Given
-        expenseDTO.setAmount(BigDecimal.valueOf(600));  // Exceeds the budget for the category
+        expenseDTO.setAmount(BigDecimal.valueOf(600));
+        budget.setActualExpenses(List.of(expense));// Exceeds the budget for the category
 
         // When & Then
         assertThrows(IllegalArgumentException.class, () -> expenseService.updateExpense(1L, expenseDTO));

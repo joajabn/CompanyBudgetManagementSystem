@@ -1,7 +1,6 @@
 package com.mthree.company_budget_mng_system.service;
 
 import com.mthree.company_budget_mng_system.dto.BudgetDTO;
-import com.mthree.company_budget_mng_system.dto.CategoryTypeAmountDTO;
 import com.mthree.company_budget_mng_system.dto.ExpenseDTO;
 import com.mthree.company_budget_mng_system.exception.BudgetAlreadyExistsException;
 import com.mthree.company_budget_mng_system.exception.ResourceNotFoundException;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -89,7 +87,7 @@ public class BudgetService {
                 if (budget.getBudgetPlanned().containsKey(categoryType)) {
                     var oldCategoryAmount = budget.getBudgetPlanned().get(categoryType);
                     var totalActualExpensesForCategory = getTotalActualExpensesForCategory(budget, categoryType);
-                    if (isNewAmoutOutOfLimits(newCategoryAmount, totalActualExpensesForCategory, oldCategoryAmount)) {
+                    if (isNewAmountOutOfLimits(newCategoryAmount, totalActualExpensesForCategory, oldCategoryAmount)) {
                         sendWarning();
                     }
                     budget.getBudgetPlanned().put(categoryType, newCategoryAmount);
@@ -121,7 +119,7 @@ public class BudgetService {
         throw new IllegalArgumentException(warningMessage);
     }
 
-    private static boolean isNewAmoutOutOfLimits(BigDecimal newCategoryAmount, BigDecimal totalActualExpensesForCategory, BigDecimal oldCategoryAmount) {
+    private static boolean isNewAmountOutOfLimits(BigDecimal newCategoryAmount, BigDecimal totalActualExpensesForCategory, BigDecimal oldCategoryAmount) {
         return newCategoryAmount.compareTo(totalActualExpensesForCategory) > 0 && newCategoryAmount.compareTo(oldCategoryAmount) < 0;
     }
 
