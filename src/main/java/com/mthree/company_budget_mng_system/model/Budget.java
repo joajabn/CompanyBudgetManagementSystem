@@ -38,15 +38,4 @@ public class Budget {
     @JoinColumn(name = "budget_id")
     private List<Expense> actualExpenses = new ArrayList<>();
 
-//    public void allocateBudgetToCategories(List<CategoryTypeAmountDTO> categoryAmountDTOs) {
-////        categoryAmounts.clear(); // Clear any existing amounts before reallocating?
-//        for (CategoryTypeAmountDTO dto : categoryAmountDTOs) {
-//            budgetPlanned.put(dto.getCategoryType(), dto.getAmount());
-//        }
-//    }
-
-//    public void addExpense(CategoryType categoryType, Expense expense) {
-//        actualExpenses.computeIfAbsent(categoryType, k -> new ArrayList<>()).add(expense);
-//    }
-
 }

@@ -1,128 +1,194 @@
 package com.mthree.company_budget_mng_system.service;
 
 import com.mthree.company_budget_mng_system.dto.ExpenseDTO;
-import com.mthree.company_budget_mng_system.exception.CategoryNotFoundException;
 import com.mthree.company_budget_mng_system.exception.ExpenseNotFoundException;
 import com.mthree.company_budget_mng_system.mapper.ExpenseMapper;
-import com.mthree.company_budget_mng_system.model.Category;
+import com.mthree.company_budget_mng_system.model.Budget;
+import com.mthree.company_budget_mng_system.model.CategoryType;
 import com.mthree.company_budget_mng_system.model.Expense;
-import com.mthree.company_budget_mng_system.repository.CategoryRepository;
+import com.mthree.company_budget_mng_system.repository.BudgetRepository;
 import com.mthree.company_budget_mng_system.repository.ExpenseRepository;
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
+import javax.swing.text.html.parser.Entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
 class ExpenseServiceTest {
-    @Mock
+
+    @MockBean
     private ExpenseRepository expenseRepository;
 
-    @Mock
-    private CategoryRepository categoryRepository;
-
-    @Mock
+    @MockBean
     private ExpenseMapper expenseMapper;
 
-    @InjectMocks
+    @MockBean
+    private BudgetRepository budgetRepository;
+
+    @Autowired
     private ExpenseService expenseService;
 
-    @Test
-    void createExpense_whenExpenseValid_shouldReturnCreatedExpense() {
-        // Given
-        Category category = new Category(1L, "Travel", BigDecimal.valueOf(1000), null, null);
-        ExpenseDTO expenseDTO = new ExpenseDTO(1L, "Flight", BigDecimal.valueOf(500), LocalDate.now(), category);
-        Expense expense = new Expense(1L, BigDecimal.valueOf(500), "Flight", LocalDate.now(), category);
+    private ExpenseDTO expenseDTO;
+    private Budget budget;
+    private Expense expense;
 
-        lenient().when(categoryRepository.findById(anyLong())).thenReturn(Optional.of(category));
-        lenient().when(expenseMapper.map(any(ExpenseDTO.class))).thenReturn(expense);
-        lenient().when(expenseRepository.save(any(Expense.class))).thenReturn(expense);
-        lenient().when(expenseMapper.map(any(Expense.class))).thenReturn(expenseDTO);
+    @Autowired
+    private EntityManager entityManager;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+
+        expenseDTO = ExpenseDTO.builder()
+                .id(1L)
+                .amount(BigDecimal.valueOf(100))
+                .categoryType(CategoryType.HR)
+                .description("Travel expense")
+                .date(LocalDate.now())
+                .build();
+
+        budget = new Budget();
+        budget.setId(1L);
+        budget.setTotalAmount(BigDecimal.valueOf(10000));
+        budget.setYear(LocalDate.now().getYear());
+        budget.setBudgetPlanned(Map.of(CategoryType.HR, BigDecimal.valueOf(500)));
+
+        expense = Expense.builder()
+                .id(1L)
+                .amount(BigDecimal.valueOf(100))
+                .description("Travel expense")
+                .date(LocalDate.of(2024, 10, 10))
+                .budget(budget)
+                .categoryType(CategoryType.HR)
+                .build();
+
+
+        when(budgetRepository.findByYear(anyInt())).thenReturn(Optional.of(budget));
+        when(expenseMapper.map(any(ExpenseDTO.class))).thenReturn(expense);
+        when(expenseMapper.map(any(Expense.class))).thenReturn(expenseDTO);
+        when(expenseRepository.save(any(Expense.class))).thenReturn(expense);
+        when(expenseRepository.findById(anyLong())).thenReturn(Optional.of(expense));
+    }
+
+    @Test
+    void createExpense_ShouldCreateExpense_WhenValid() {
+        // Given a valid expense DTO
+        ExpenseDTO expenseDTO = new ExpenseDTO();
+        expenseDTO.setAmount(BigDecimal.valueOf(100));
+        expenseDTO.setCategoryType(CategoryType.HR);
+        expenseDTO.setDescription("Travel expense");
+        expenseDTO.setDate(LocalDate.of(2024, 10, 10));
 
         // When
-        ExpenseDTO createdExpense = expenseService.createExpense(expenseDTO);
+        ExpenseDTO result = expenseService.createExpense(expenseDTO);
 
         // Then
-        assertNotNull(createdExpense);
-        assertEquals("Flight", createdExpense.getDescription());
-        assertEquals(BigDecimal.valueOf(500), createdExpense.getAmount());
+        verify(expenseRepository, times(1)).save(any(Expense.class));
+        assertEquals(expenseDTO.getAmount(), result.getAmount());
     }
 
     @Test
-    void createExpense_whenCategoryNotFound_shouldThrowException() {
+    void createExpense_ShouldThrowException_WhenCategoryBudgetExceeded() {
         // Given
-        ExpenseDTO expenseDTO = new ExpenseDTO(1L, "Flight", BigDecimal.valueOf(500), LocalDate.now(), null);
-        lenient().when(categoryRepository.findById(anyLong())).thenReturn(Optional.empty());
+        expenseDTO.setAmount(BigDecimal.valueOf(600));
 
         // When & Then
-        assertThrows(CategoryNotFoundException.class, () -> expenseService.createExpense(expenseDTO));
+        assertThrows(IllegalArgumentException.class, () -> expenseService.createExpense(expenseDTO));
     }
 
     @Test
-    void getExpenseById_whenExpenseExists_shouldReturnExpense() {
+    void updateExpense_ShouldUpdateExpense_WhenValid() {
         // Given
-        Expense expense = new Expense(1L, BigDecimal.valueOf(500), "Flight", LocalDate.now(), null);
-        ExpenseDTO expenseDTO = new ExpenseDTO(1L, "Flight", BigDecimal.valueOf(500), LocalDate.now(), null);
+        Expense expense = new Expense();
+        expense.setId(1L);
+        expense.setAmount(BigDecimal.valueOf(100));
+        expense.setCategoryType(CategoryType.HR);
+        expense.setDescription("Old description");
+        expense.setDate(LocalDate.of(2024, 10, 10));
 
-        when(expenseRepository.findById(anyLong())).thenReturn(Optional.of(expense));
-        when(expenseMapper.map(any(Expense.class))).thenReturn(expenseDTO);
+        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+
+        // When
+        ExpenseDTO updatedExpenseDTO = expenseService.updateExpense(1L, expenseDTO);
+
+        // Then
+        verify(expenseRepository, times(1)).save(expense);
+        assertEquals(expenseDTO.getDescription(), updatedExpenseDTO.getDescription());
+        assertEquals(expenseDTO.getAmount(), updatedExpenseDTO.getAmount());
+    }
+
+    @Test
+    void updateExpense_ShouldThrowException_WhenCategoryBudgetExceeded() {
+        // Given
+        expenseDTO.setAmount(BigDecimal.valueOf(600));  // Exceeds the budget for the category
+
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () -> expenseService.updateExpense(1L, expenseDTO));
+    }
+
+    @Test
+    void getExpenseById_ShouldReturnExpense_WhenFound() {
+        // Given
+        Expense expense = new Expense();
+        expense.setId(1L);
+        expense.setAmount(BigDecimal.valueOf(100));
+
+        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
 
         // When
         ExpenseDTO result = expenseService.getExpenseById(1L);
 
         // Then
         assertNotNull(result);
-        assertEquals("Flight", result.getDescription());
+        assertEquals(expense.getId(), result.getId());
+        assertEquals(expense.getAmount(), result.getAmount());
     }
 
     @Test
-    void getExpenseById_whenExpenseNotFound_shouldThrowException() {
+    void getExpenseById_ShouldThrowException_WhenNotFound() {
         // Given
-        when(expenseRepository.findById(anyLong())).thenReturn(Optional.empty());
+        when(expenseRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
         assertThrows(ExpenseNotFoundException.class, () -> expenseService.getExpenseById(1L));
     }
 
     @Test
-    void updateExpense_whenExpenseExists_shouldReturnUpdatedExpense() {
+    void deleteExpense_ShouldDeleteExpense_WhenFound() {
         // Given
-        ExpenseDTO expenseDTO = new ExpenseDTO(1L, "Flight", BigDecimal.valueOf(550), LocalDate.now(), null);
-        Expense expense = new Expense(1L, BigDecimal.valueOf(500), "Flight", LocalDate.now(), null);
-        Expense updatedExpense = new Expense(1L, BigDecimal.valueOf(550), "Flight", LocalDate.now(), null);
-
-        when(expenseRepository.findById(anyLong())).thenReturn(Optional.of(expense));
-        lenient().when(expenseMapper.map(any(ExpenseDTO.class))).thenReturn(updatedExpense);
-        when(expenseRepository.save(any(Expense.class))).thenReturn(updatedExpense);
-        when(expenseMapper.map(any(Expense.class))).thenReturn(expenseDTO);
+        Expense expense = new Expense();
+        expense.setId(1L);
+        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
 
         // When
-        ExpenseDTO result = expenseService.updateExpense(1L, expenseDTO);
+        expenseService.deleteExpense(1L);
 
         // Then
-        assertNotNull(result);
-        assertEquals(BigDecimal.valueOf(550), result.getAmount());
+        verify(expenseRepository, times(1)).delete(expense);
     }
 
     @Test
-    void updateExpense_whenExpenseNotFound_shouldThrowException() {
+    void deleteExpense_ShouldThrowException_WhenNotFound() {
         // Given
-        ExpenseDTO expenseDTO = new ExpenseDTO(1L, "Flight", BigDecimal.valueOf(550), LocalDate.now(), null);
-        when(expenseRepository.findById(anyLong())).thenReturn(Optional.empty());
+        when(expenseRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(ExpenseNotFoundException.class, () -> expenseService.updateExpense(1L, expenseDTO));
+        assertThrows(ExpenseNotFoundException.class, () -> expenseService.deleteExpense(1L));
     }
-
 }

@@ -6,5 +6,6 @@ public enum CategoryType {
     SALES,
     IT,
     OTHER,
+    TRAVEL,
     OPERATIONS;
 }

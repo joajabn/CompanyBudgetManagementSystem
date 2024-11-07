@@ -31,7 +31,7 @@ public class Expense {
     private Budget budget;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "category_type", nullable = false)
     private CategoryType categoryType;
 
 }

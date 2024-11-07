@@ -12,7 +12,6 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -68,8 +67,8 @@ public class ExpenseService {
         Expense savedExpense = expenseRepository.save(expense);
 
         // Check if the total expenses for the category exceeded 90% of the planned budget
-        BigDecimal threshold = plannedAmountPerCategory.multiply(BigDecimal.valueOf(0.9));
-        if (newTotalForCategory.compareTo(threshold) > 0) {
+        BigDecimal thresholdForCategory = plannedAmountPerCategory.multiply(BigDecimal.valueOf(0.9));
+        if (newTotalForCategory.compareTo(thresholdForCategory) > 0) {
             // Throw exception with warning message
             throw new CategoryThresholdExceededException("You exceeded 90% of the budget for category " + expenseDTO.getCategoryType() + ".");
         }
@@ -78,7 +77,8 @@ public class ExpenseService {
         BigDecimal totalActualExpenses = budget.getActualExpenses().stream()
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (totalActualExpenses.compareTo(budget.getTotalAmount().multiply(BigDecimal.valueOf(0.9))) > 0) {
+        BigDecimal thresholdForBudget = budget.getTotalAmount().multiply(BigDecimal.valueOf(0.9));
+        if (totalActualExpenses.compareTo(thresholdForBudget) > 0) {
             throw new BudgetThresholdExceededException("You exceeded 90% of the total budget for the year " + year);
         }
         // Return response with both the expense and warning message (if any)
@@ -100,13 +100,48 @@ public class ExpenseService {
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() -> new ExpenseNotFoundException("Expense not found with id " + id));
 
-        // Update fields as needed
+        // Store the old categoryType and amount to validate reductions
+        BigDecimal oldAmount = expense.getAmount();
+
         expense.setDescription(expenseDTO.getDescription());
         expense.setAmount(expenseDTO.getAmount());
         expense.setDate(expenseDTO.getDate());
-        // Update other fields if necessary
+        expense.setCategoryType(expenseDTO.getCategoryType());
 
-        return expenseMapper.map(expenseRepository.save(expense));
+        Budget budget = budgetRepository.findByYear(expense.getDate().getYear())
+                .orElseThrow(() -> new ResourceNotFoundException("No budget found for the year: " + expense.getDate().getYear()));
+
+        BigDecimal totalExpensesForCategory = budget.getActualExpenses().stream()
+                .filter(exp -> exp.getCategoryType().equals(expenseDTO.getCategoryType()))
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal plannedAmountPerCategory = budget.getBudgetPlanned().get(expenseDTO.getCategoryType());
+
+        BigDecimal newTotalForCategory = totalExpensesForCategory.add(expenseDTO.getAmount());
+
+        // Validate that reducing the amount does not breach the category budget
+        if (expenseDTO.getAmount().compareTo(oldAmount) > 0) {
+            // Check if the new amount violates the category's budget
+            // If the new amount will make total expenses greater than actual expenses, warn
+            if (newTotalForCategory.compareTo(plannedAmountPerCategory) > 0) {
+                throw new IllegalArgumentException("Updating this expense will exceed the budget for the category " + expenseDTO.getCategoryType());
+            }
+        }
+
+        Expense updatedExpense = expenseRepository.save(expense);
+
+        // Check if the total expenses exceed 90% of the total budget after updating the expense
+        BigDecimal totalExpenses = budget.getActualExpenses().stream()
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalExpenses.compareTo(budget.getTotalAmount().multiply(BigDecimal.valueOf(0.9))) > 0) {
+            String warningMessage = "Warning: Expenses exceed 90% of the total budget.";
+            log.warn(warningMessage);
+        }
+
+        return expenseMapper.map(updatedExpense);
     }
 
     @Transactional

@@ -22,6 +22,7 @@ public class ExpenseDTO {
     @Positive(message = "The total amount must be positive!")
     private BigDecimal amount;
 
+    @NotNull(message = "You need to provide the date of expense!")
     private LocalDate date;
 
     @NotNull(message = "Provide category of your expense.")

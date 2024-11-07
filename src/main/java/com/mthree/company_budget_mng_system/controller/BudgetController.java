@@ -66,6 +66,12 @@ public class BudgetController {
         return ResponseEntity.ok(percentageUsed);
     }
 
+    @GetMapping("/{budgetId}/rest")
+    public ResponseEntity<BigDecimal> getRestOfBudgetAvailable(@PathVariable Long budgetId) {
+        BigDecimal calculateRestFoBudget = budgetService.calculateRestOfBudget(budgetId);
+        return ResponseEntity.ok(calculateRestFoBudget);
+    }
+
     @ExceptionHandler(BudgetAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseEntity<String> handleBudgetAlreadyExists(BudgetAlreadyExistsException e) {
