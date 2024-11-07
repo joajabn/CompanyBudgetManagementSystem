@@ -16,12 +16,10 @@ import java.util.Map;
 
 @Mapper(componentModel = "spring")
 public interface BudgetMapper {
-//    BudgetDTO map(Budget budget);
-//    Budget map(BudgetDTO budgetDTO);
+
     List<BudgetDTO> mapToDtoList(List<Budget> budgets);
     List<Budget> mapToEntityList(List<BudgetDTO> budgetDTOS);
 
-    // Mapping between BudgetDTO and Budget
     @Mapping(target = "budgetPlanned", source = "categoryTypeAmountDTOS")
     Budget toEntity(BudgetDTO budgetDTO);
     @Mapping(target = "categoryTypeAmountDTOS", source = "budgetPlanned")

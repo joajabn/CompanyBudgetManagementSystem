@@ -34,4 +34,8 @@ public class Expense {
     @Column(name = "category_type", nullable = false)
     private CategoryType categoryType;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
 }

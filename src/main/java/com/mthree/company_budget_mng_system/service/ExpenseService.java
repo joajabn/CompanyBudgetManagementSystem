@@ -7,7 +7,7 @@ import com.mthree.company_budget_mng_system.model.Budget;
 import com.mthree.company_budget_mng_system.model.Expense;
 import com.mthree.company_budget_mng_system.repository.BudgetRepository;
 import com.mthree.company_budget_mng_system.repository.ExpenseRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
