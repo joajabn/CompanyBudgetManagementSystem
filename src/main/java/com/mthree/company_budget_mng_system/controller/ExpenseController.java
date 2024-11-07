@@ -2,6 +2,8 @@ package com.mthree.company_budget_mng_system.controller;
 
 import com.mthree.company_budget_mng_system.dto.ExpenseDTO;
 import com.mthree.company_budget_mng_system.exception.BudgetThresholdExceededException;
+import com.mthree.company_budget_mng_system.exception.CategoryThresholdExceededException;
+import com.mthree.company_budget_mng_system.exception.CategoryThresholdExceededException;
 import com.mthree.company_budget_mng_system.exception.ExpenseNotFoundException;
 import com.mthree.company_budget_mng_system.exception.ResourceNotFoundException;
 import com.mthree.company_budget_mng_system.service.ExpenseService;
@@ -57,9 +59,14 @@ public class ExpenseController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
 
+    @ExceptionHandler(CategoryThresholdExceededException.class)
+    public ResponseEntity<Map<String, String>> handleCategoryThresholdExceededException(BudgetThresholdExceededException e) {
+        Map<String, String> response = new HashMap<>();
+        response.put("warningMessage", e.getMessage());
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
     @ExceptionHandler(BudgetThresholdExceededException.class)
     public ResponseEntity<Map<String, String>> handleBudgetThresholdExceededException(BudgetThresholdExceededException e) {
-        // Prepare a response body with the warning message
         Map<String, String> response = new HashMap<>();
         response.put("warningMessage", e.getMessage());
         return ResponseEntity.status(HttpStatus.OK).body(response);
