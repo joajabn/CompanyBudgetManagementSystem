@@ -5,11 +5,10 @@ import jakarta.validation.constraints.Positive;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
-//@Getter
-//@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -23,16 +22,22 @@ public class BudgetDTO {
 
     private Integer year;
 
-    private List<CategoryDTO> categories;
+    private List<CategoryTypeAmountDTO> categoryTypeAmountDTOS = new ArrayList<>();
 
-    public void validateBudget(BudgetDTO budgetDTO) {
-        BigDecimal totalCategoryAmount = budgetDTO.getCategories().stream()
-                .map(CategoryDTO::getAmount)
+    public boolean validateBudget(BudgetDTO budgetDTO) {
+        BigDecimal totalCalculatedAmount = budgetDTO.getCategoryTypeAmountDTOS().stream()
+                .map(CategoryTypeAmountDTO::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        if (totalCategoryAmount.compareTo(budgetDTO.getTotalAmount()) != 0) {
+        System.out.println("Calculated Total Amount: " + totalCalculatedAmount);
+        System.out.println("Expected Total Amount: " + budgetDTO.getTotalAmount());
+
+        // Ensure the total calculated amount equals the total budget amount
+        if (totalCalculatedAmount.compareTo(budgetDTO.getTotalAmount()) != 0) {
             throw new IllegalArgumentException("The sum of category amounts must equal the total budget amount.");
         }
+
+        return true;
     }
 
 }
