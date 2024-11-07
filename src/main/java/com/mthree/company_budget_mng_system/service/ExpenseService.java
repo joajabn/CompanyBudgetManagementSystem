@@ -4,10 +4,11 @@ import com.mthree.company_budget_mng_system.dto.ExpenseDTO;
 import com.mthree.company_budget_mng_system.exception.*;
 import com.mthree.company_budget_mng_system.mapper.ExpenseMapper;
 import com.mthree.company_budget_mng_system.model.Budget;
+import com.mthree.company_budget_mng_system.model.CategoryType;
 import com.mthree.company_budget_mng_system.model.Expense;
 import com.mthree.company_budget_mng_system.repository.BudgetRepository;
 import com.mthree.company_budget_mng_system.repository.ExpenseRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class ExpenseService {
     }
 
     public ExpenseDTO createExpense(ExpenseDTO expenseDTO) {
+        log.info("Creating an expense.");
         //1. Find the matching budget by Year
         int year = expenseDTO.getDate().getYear();
         Budget budget = budgetRepository.findByYear(year)
@@ -39,7 +41,9 @@ public class ExpenseService {
         expense.setBudget(budget);
         Expense savedExpense = validateExpenseAgainstBudgetPlanned(expenseDTO, budget, expense, year);
         // Return response with both the expense and warning message (if any)
-        return expenseMapper.map(savedExpense);
+        ExpenseDTO dto = expenseMapper.map(savedExpense);
+        log.info("Expense created.");
+        return dto;
     }
 
     private Expense validateExpenseAgainstBudgetPlanned(ExpenseDTO expenseDTO, Budget budget, Expense expense, int year) {
@@ -131,17 +135,33 @@ public class ExpenseService {
     }
 
     public List<ExpenseDTO> getAllExpenses() {
-        return expenseMapper.mapToDtoList(expenseRepository.findAll());
+        log.info("Fetching all expenses...");
+        List<Expense> allExpenses = expenseRepository.findAll();
+        List<ExpenseDTO> expenseDTOS = expenseMapper.mapToDtoList(allExpenses);
+        log.info("Fetch completed.");
+        return expenseDTOS;
     }
 
     public ExpenseDTO getExpenseById(Long id) {
+        log.info("Getting expenses for id '{}'.", id);
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(handleExpenseNotFound(id));
-        return expenseMapper.map(expense);
+        ExpenseDTO expenseDTO = expenseMapper.map(expense);
+        log.info("Fetch completed");
+        return expenseDTO;
+    }
+
+    public List<ExpenseDTO> getExpenseByCategoryType(CategoryType categoryType){
+        log.info("Getting expenses for category '{}'.", categoryType);
+        List<Expense> byCategoryType = expenseRepository.findByCategoryType(categoryType);
+        List<ExpenseDTO> expenseDTOS = expenseMapper.mapToDtoList(byCategoryType);
+        log.info("Fetch completed");
+        return expenseDTOS;
     }
 
 
     public ExpenseDTO updateExpense(Long id, ExpenseDTO expenseDTO) {
+        log.info("Updating expense with id '{}'.", id);
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(handleExpenseNotFound(id));
 
@@ -158,8 +178,9 @@ public class ExpenseService {
                 .orElseThrow(handleResourceNotFound(expense.getDate().getYear()));
 
         Expense updatedExpense = validateUpdatedExpenseAgainstBudgetPlanned(expenseDTO, budget, newAmount, oldAmount, expense);
-
-        return expenseMapper.map(updatedExpense);
+        ExpenseDTO updatedExpenseDTO = expenseMapper.map(updatedExpense);
+        log.info("Update completed.");
+        return updatedExpenseDTO;
     }
 
     @Transactional
@@ -198,8 +219,10 @@ public class ExpenseService {
 
     @Transactional
     public void deleteExpense(Long id) {
+        log.info("Removing expense with id '{}'.", id);
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(handleExpenseNotFound(id));
         expenseRepository.delete(expense);
+        log.info("Removing expense completed.");
     }
 }

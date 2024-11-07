@@ -38,4 +38,8 @@ public class Budget {
     @JoinColumn(name = "budget_id")
     private List<Expense> actualExpenses = new ArrayList<>();
 
+    @ManyToOne
+    @JoinColumn(name = "manager_id", nullable = false)
+    private User manager;
+
 }
