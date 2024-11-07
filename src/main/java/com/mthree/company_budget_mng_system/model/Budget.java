@@ -39,7 +39,7 @@ public class Budget {
     private List<Expense> actualExpenses = new ArrayList<>();
 
     @ManyToOne
-    @JoinColumn(name = "manager_id", nullable = false)
+    @JoinColumn(name = "manager_id")
     private User manager;
 
 }

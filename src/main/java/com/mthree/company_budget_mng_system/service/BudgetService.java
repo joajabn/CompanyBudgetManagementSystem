@@ -191,6 +191,4 @@ public class BudgetService {
         log.info("The rest calculated");
         return subtracted;
     }
-
-
 }
