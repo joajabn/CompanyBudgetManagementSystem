@@ -49,8 +49,9 @@ public class BudgetService {
         // 3. Map BudgetDTO to Budget
         Budget budget = budgetMapper.toEntity(budgetDTO);
         Budget savedBudget = budgetRepository.save(budget);
+        BudgetDTO savedBudgetDTO = budgetMapper.toDto(savedBudget);
         log.info("Creating budget completed.");
-        return budgetMapper.toDto(savedBudget);
+        return savedBudgetDTO;
     }
 
     public List<BudgetDTO> getAllBudgets() {

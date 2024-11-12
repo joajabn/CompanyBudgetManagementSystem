@@ -25,8 +25,11 @@ The Company Budget Management System allows users to:
 - **Budget and Expense Comparison**: Automatically compares budgeted amounts with actual expenses.
 - **Category-Wise Expense Tracking**: Expenses are categorized into pre-defined types such as HR, IT, Marketing, etc.
 - **Real-Time Alerts**: Alerts when the total expenses or a category’s expenses exceed 90% of the allocated budget.
-- **Secure Access Control**: Role-based access control using Spring Security (users, managers, etc.).
-- **Database & Caching**: Data is stored in a relational database (MySQL), and caching is implemented to improve performance.
+- **Database**: Data is stored in a relational database (MySQL).
+
+[//]: # (- **Secure Access Control**: Role-based access control using Spring Security &#40;users, managers, etc.&#41;.)
+
+[//]: # (- **Database & Caching**: Data is stored in a relational database &#40;MySQL&#41;, and caching is implemented to improve performance.)
 
 ## Technologies Used
 - **Backend Framework**: Spring Boot
@@ -42,7 +45,8 @@ The application follows a layered architecture:
 1. **Controller Layer**: Exposes RESTful endpoints for budget and expense management.
 2. **Service Layer**: Handles business logic, including budget validation, expense tracking, and alert generation.
 3. **Repository Layer**: Interacts with the database to persist and retrieve budgets, categories, and expenses.
-4. **Security Layer**: Manages user authentication and role-based authorization.
+
+[//]: # (4. **Security Layer**: Manages user authentication and role-based authorization.)
 
 ## API Endpoints
 ### Budget Endpoints
@@ -82,7 +86,7 @@ The application follows a layered architecture:
 ### Steps to Run Locally
 1. **Clone the repository**:
     ```bash
-    git clone https://github.com/yourusername/budget-management-system.git
+    git clone https://github.com/joajabn/CompanyBudgetManagementSystem.git
     ```
 
 2. **Set up the database**:

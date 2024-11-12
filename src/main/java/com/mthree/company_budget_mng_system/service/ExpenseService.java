@@ -8,6 +8,8 @@ import com.mthree.company_budget_mng_system.model.CategoryType;
 import com.mthree.company_budget_mng_system.model.Expense;
 import com.mthree.company_budget_mng_system.repository.BudgetRepository;
 import com.mthree.company_budget_mng_system.repository.ExpenseRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,9 @@ public class ExpenseService {
     private final ExpenseMapper expenseMapper;
     private BudgetRepository budgetRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Autowired
     public ExpenseService(ExpenseRepository expenseRepository, ExpenseMapper expenseMapper, BudgetRepository budgetRepository) {
         this.expenseRepository = expenseRepository;
@@ -31,6 +36,7 @@ public class ExpenseService {
         this.budgetRepository = budgetRepository;
     }
 
+    @Transactional
     public ExpenseDTO createExpense(ExpenseDTO expenseDTO) {
         log.info("Creating an expense.");
         //1. Find the matching budget by Year
@@ -39,21 +45,25 @@ public class ExpenseService {
                 .orElseThrow(handleResourceNotFound(year));
         Expense expense = expenseMapper.map(expenseDTO);
         expense.setBudget(budget);
-        Expense savedExpense = validateExpenseAgainstBudgetPlanned(expenseDTO, budget, expense, year);
+        if (!entityManager.contains(expense)) {
+            expense = entityManager.merge(expense);
+        }
+
+        validateExpenseAgainstBudgetPlanned(expenseDTO, budget, expense, year);
+        Expense savedExpense = saveExpenseAndUpdateBudget(budget, expense);
         // Return response with both the expense and warning message (if any)
-        ExpenseDTO dto = expenseMapper.map(savedExpense);
+        ExpenseDTO savedExpenseDTO = expenseMapper.map(savedExpense);
         log.info("Expense created.");
-        return dto;
+        return savedExpenseDTO;
     }
 
-    private Expense validateExpenseAgainstBudgetPlanned(ExpenseDTO expenseDTO, Budget budget, Expense expense, int year) {
+
+    private void validateExpenseAgainstBudgetPlanned(ExpenseDTO expenseDTO, Budget budget, Expense expense, int year) {
         var plannedAmountPerCategory = budget.getBudgetPlanned().get(expenseDTO.getCategoryType());
 
         var totalExpensesForCategory = getTotalExpensesForCategory(expenseDTO, budget);
 
         var newTotalForCategory = getNewTotalForCategoryOrThrowException(expenseDTO, totalExpensesForCategory, plannedAmountPerCategory);
-
-        Expense savedExpense = saveExpenseAndUpdateBudget(budget, expense);
 
         // Check if the total expenses for the category exceeded 90% of the planned budget
         var thresholdForCategory = calculateThreshold(plannedAmountPerCategory);
@@ -63,14 +73,13 @@ public class ExpenseService {
         var totalActualExpenses = getTotalActualExpenses(budget);
         var thresholdForBudget = calculateThreshold(budget.getTotalAmount());
         isThresholdForBudgetExceeded(totalActualExpenses, thresholdForBudget, year);
-        return savedExpense;
     }
 
     private static void isThresholdForBudgetExceeded(BigDecimal totalActualExpenses, BigDecimal thresholdForBudget, int year) {
         if (totalActualExpenses.compareTo(thresholdForBudget) > 0) {
             String message = "You exceeded 90% of the total budget for the year " + year;
-            log.error(message);
-            throw new BudgetThresholdExceededException(message);
+            log.warn(message);
+//            throw new BudgetThresholdExceededException(message);
         }
     }
 
@@ -123,7 +132,7 @@ public class ExpenseService {
             // Throw exception with warning message
             String message = "You exceeded 90% of the budget for category " + expenseDTO.getCategoryType() + ".";
             log.warn(message);
-            throw new CategoryThresholdExceededException(message);
+//            throw new CategoryThresholdExceededException(message);
         }
     }
 
@@ -150,15 +159,6 @@ public class ExpenseService {
         log.info("Fetch completed");
         return expenseDTO;
     }
-
-    public List<ExpenseDTO> getExpenseByCategoryType(CategoryType categoryType){
-        log.info("Getting expenses for category '{}'.", categoryType);
-        List<Expense> byCategoryType = expenseRepository.findByCategoryType(categoryType);
-        List<ExpenseDTO> expenseDTOS = expenseMapper.mapToDtoList(byCategoryType);
-        log.info("Fetch completed");
-        return expenseDTOS;
-    }
-
 
     public ExpenseDTO updateExpense(Long id, ExpenseDTO expenseDTO) {
         log.info("Updating expense with id '{}'.", id);

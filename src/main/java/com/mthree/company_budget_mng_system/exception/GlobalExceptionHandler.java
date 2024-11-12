@@ -30,12 +30,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CategoryThresholdExceededException.class)
-    public ResponseEntity<Map<String, String>> handleCategoryThresholdExceededException(BudgetThresholdExceededException e) {
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<Map<String, String>> handleCategoryThresholdExceededException(CategoryThresholdExceededException e) {
         Map<String, String> response = new HashMap<>();
         response.put("warningMessage", e.getMessage());
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
     @ExceptionHandler(BudgetThresholdExceededException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<Map<String, String>> handleBudgetThresholdExceededException(BudgetThresholdExceededException e) {
         Map<String, String> response = new HashMap<>();
         response.put("warningMessage", e.getMessage());

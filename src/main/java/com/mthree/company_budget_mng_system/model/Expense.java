@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+//@Table(name = "expenses")
 public class Expense {
 
     @Id
@@ -35,7 +36,7 @@ public class Expense {
     private CategoryType categoryType;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
 }

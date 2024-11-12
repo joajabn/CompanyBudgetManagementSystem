@@ -39,6 +39,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())  // Optionally disable CSRF protection if it's not needed
                 .authorizeHttpRequests(auth -> auth
+//                        .requestMatchers("/api/users/**").hasRole("ADMIN")
                         .anyRequest().permitAll()  // Permits all requests without authentication
                 );
         return http.build();

@@ -6,6 +6,7 @@ import com.mthree.company_budget_mng_system.exception.CategoryThresholdExceededE
 import com.mthree.company_budget_mng_system.exception.CategoryThresholdExceededException;
 import com.mthree.company_budget_mng_system.exception.ExpenseNotFoundException;
 import com.mthree.company_budget_mng_system.exception.ResourceNotFoundException;
+import com.mthree.company_budget_mng_system.model.CategoryType;
 import com.mthree.company_budget_mng_system.service.ExpenseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
